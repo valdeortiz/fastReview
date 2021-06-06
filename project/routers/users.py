@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from fastapi import Response
 from fastapi.routing import APIRouter
 from ..database import User
 from ..schemas import UserRequestModel,UserResponseModel
@@ -21,12 +22,14 @@ async def create_user(user: UserRequestModel):
     return user
 
 @router.post('/login', response_model=UserResponseModel)
-async def login(credential: HTTPBasicCredentials):
+async def login(credential: HTTPBasicCredentials, response: Response):
     user = User.select().where(User.username == credential.username).first()
     if user is None:
         raise HTTPException(404, 'USer not found')
 
     if user.password != User.create_password(credential.password):
         raise HTTPException(404, 'Password Error')
+
+    response.set_cookie(key='user_id', value=user.id)
 
     return user
